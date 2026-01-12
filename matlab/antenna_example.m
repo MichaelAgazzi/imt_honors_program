@@ -1,13 +1,17 @@
 clear; clc; close all;
-
+this_dir = fileparts(mfilename('fullpath'));
+if ~isempty(this_dir)
+    addpath(this_dir);
+end
+%%
 % ==========================================================
-%  SYSTEM SETUP
+%  ANTENNA MOTOR CONTROL CLQR vs LQR, LTV sytem
 % ==========================================================
-% Define uncertainty vertices (two cases)
-A1 = [1.1 0.1; 0 0.99];
-A2 = [0.9 0.1; 0 0];
-B1 = [0.1; 0.09*0.787];
-B2 = [0.1; 0.1*0.787];
+% Define uncertainty vertices
+A1 = [1 0.1; 0 0.9];
+A2 = [1 0.1; 0 0.1];
+B1 = [0; 0.1*0.787];
+B2 = [0; 0.1*0.787];
 A = {A1, A2};
 B = {B1, B2};
 
@@ -15,17 +19,17 @@ n = 2; m = 1;
 Qc = eye(n);
 R = eye(m);
 
-Qc(1,1) = 10.0;
-Qc(2,2) = 0.0;
-R(1,1) = 0.00002;
+Qc(1,1) = 1;
+Qc(2,2)=0;
+R = 2e-5;            
 
 % Simulation parameters
-dt = 0.2;            % sampling time (Euler step)
+dt = 0.1;           % sampling time (Euler step)
 Nsim = 30;          % number of simulation steps
 
 % Input/output bounds
 u_bound = 2.0;
-y_bound = 1.5;
+y_bound = 1000.5;
 epsilon = 1e-5;
 
 % Initial state
@@ -33,9 +37,10 @@ x = [0.05; 0.0];
 x_hist = x;
 u_hist = [];
 solving_time_clqr = [];
+poles_clqr = [];
 time = 0;
 
-% Choose which vertex to simulate (you can switch each iteration)
+% Choose which vertex to simulate
 vertex_id = 2;
 
 % ==========================================================
@@ -46,38 +51,51 @@ for k = 1:Nsim
 
     % Compute robust feedback gain via LMIs
     tic
-    [K, gamma, Q, Y] = lmi_clqr(A, B, Qc, R, x, u_bound, y_bound, epsilon);
+    [Kclqr, gamma, Q, Y] = lmi_clqr(A, B, Qc, R, x, u_bound, y_bound, epsilon);
     solving_time_clqr(k) = toc;
 
-    if isempty(K)
+    if isempty(Kclqr)
         warning('Infeasible LMI at step %d', k);
         break;
     end
 
     % Compute control input
-    u = K * x;
+    u = Kclqr * x;
+    Kclqr
 
     % Enforce bounds
     % u = max(min(u, u_max), u_min);
 
-    % Simulate system (Euler step or discrete propagation)
-    % Here we choose one of the vertices randomly or fixed
+    % Simulate system (Euler step)
+    L = length(A);
+    alpha = rand(1,L);
+    alpha = alpha / sum(alpha);
+    A_random = zeros(size(A1));
+    B_random = zeros(size(B1));
+    for i = 1:L
+        A_random = A_random + alpha(i) * A{i};
+        B_random = B_random + alpha(i) * B{i};
+    end
+    % fixed A,B
     Ai = A{vertex_id};
     Bi = B{vertex_id};
-    x = Ai * x + Bi * u ;   % difference from discrete to Euler
-
+    % random A B
+    % Ai = A_random;
+    % Bi = B_random;
+    x = Ai * x + Bi * u;   % difference from discrete to Euler
+    
     % Store
+    poles_clqr = [poles_clqr, eig(Ai + Bi*Kclqr)];
     x_hist = [x_hist, x];
     u_hist = [u_hist, u];
     time = [time, k*dt];
 
-    % (Optional) alternate the vertex each step to test robustness
-    % vertex_id = 3 - vertex_id; % switch between 1 and 2
 end
 
 % ==========================================================
 %  PLOTTING
 % ==========================================================
+
 figure;
 subplot(3,1,1);
 plot(time, x_hist(1,:), 'LineWidth', 1.5); hold on;
@@ -102,44 +120,56 @@ ylabel('[ms]');
 grid on;
 title('solving time');
 
-%% standard lqr
+%% STANDARD  UNCONSTRAINED LQR
 
 % Initial state
 x = [0.05; 0.0];
 x_hist_lqr = x;
 u_hist_lqr = [];
+poles_lqr = [];
 time = 0;
 for k = 1:Nsim
     fprintf('=== STANDARD LQR Step %d ===\n', k);
     
     % lqr
     % x_{k+1} = A*x_k + B*u_k
-    [K, S, e] = dlqr(A{1}, B{1}, Qc, R);
+    [Klqr, S, e] = dlqr([1.0 0.1; 0 0.9], B{1}, Qc, R);
 
-    if isempty(K)
+    if isempty(Klqr)
         warning('Infeasible LMI at step %d', k);
         break;
     end
 
     % Compute control input
-    u = -K * x;
+    u = -Klqr * x;
 
     % Enforce bounds
     u = max(min(u, u_bound), -u_bound);
 
-    % Simulate system (Euler step or discrete propagation)
-    % Here we choose one of the vertices randomly or fixed
+    % Simulate system (Euler step)
+    L = length(A);
+    alpha = rand(1,L);
+    alpha = alpha / sum(alpha);
+    A_random = zeros(size(A1));
+    B_random = zeros(size(B1));
+    for i = 1:L
+        A_random = A_random + alpha(i) * A{i};
+        B_random = B_random + alpha(i) * B{i};
+    end
+    % fixed A,B
     Ai = A{vertex_id};
     Bi = B{vertex_id};
+    % random A B
+    % Ai = A_random;
+    % Bi = B_random;
     x = Ai * x + Bi * u;   % difference from discrete to Euler
 
     % Store
+    poles_lqr =[poles_lqr, eig(Ai+Bi*Klqr)]
     x_hist_lqr = [x_hist_lqr, x];
     u_hist_lqr = [u_hist_lqr, u];
     time = [time, k*dt];
 
-    % (Optional) alternate the vertex each step to test robustness
-    % vertex_id = 3 - vertex_id; % switch between 1 and 2
 end
 
 %%
@@ -170,8 +200,38 @@ stairs(time(1:end-1), u_hist, 'LineWidth', 1.5); hold on
 stairs(time(1:end-1), u_hist_lqr, 'LineWidth', 1.5);
 xlabel('Time [s]');
 ylabel('u(k)');
-legend('u clqr','u lqr');
 yline(u_bound);
 yline(-u_bound);
+legend('u clqr','u lqr', 'u_{bound up}', 'u_{bound down}');
 grid on;
 title('Control input');
+
+%%
+% plot poles
+figure;
+plot(real(poles_clqr(1,:)), imag(poles_clqr(1,:)), 'o-'); hold on;
+plot(real(poles_clqr(2,:)), imag(poles_clqr(2,:)), 'o-');
+% Plot unit circle
+theta = linspace(0, 2*pi, 400);
+plot(cos(theta), sin(theta), 'k--', 'LineWidth', 1.5);
+grid on;
+xlabel('Real Axis');
+ylabel('Imaginary Axis');
+title('Pole Trajectories');
+legend('Pole 1','Pole 2');
+axis equal;
+
+%%
+% plot poles
+figure;
+plot(real(poles_lqr(1,:)), imag(poles_lqr(1,:)), 'o-'); hold on;
+plot(real(poles_lqr(2,:)), imag(poles_lqr(2,:)), 'o-');
+% Plot unit circle
+theta = linspace(0, 2*pi, 400);
+plot(cos(theta), sin(theta), 'k--', 'LineWidth', 1.5);
+grid on;
+xlabel('Real Axis');
+ylabel('Imaginary Axis');
+title('Pole Trajectories');
+legend('Pole 1','Pole 2');
+axis equal;

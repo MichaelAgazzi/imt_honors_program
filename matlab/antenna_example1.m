@@ -1,4 +1,8 @@
 clear; clc; close all;
+this_dir = fileparts(mfilename('fullpath'));
+if ~isempty(this_dir)
+    addpath(this_dir);
+end
 
 % ---- parameters ----
 dt = 0.1;             % sampling time as in paper

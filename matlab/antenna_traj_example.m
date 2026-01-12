@@ -1,4 +1,8 @@
 clear; clc; close all;
+this_dir = fileparts(mfilename('fullpath'));
+if ~isempty(this_dir)
+    addpath(this_dir);
+end
 %%
 % ==========================================================
 %  ANTENNA MOTOR CONTROL CLQR vs LQR, LTV sytem
