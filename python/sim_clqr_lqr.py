@@ -39,7 +39,8 @@ Nsim = 200
 u_bound = 2.0
 y_bound = 1000.5
 epsilon = 1e-5
-figure_dir = Path("figure")
+BASE_DIR = Path(__file__).resolve().parent
+figure_dir = BASE_DIR / "figure"
 figure_dir.mkdir(exist_ok=True)
 COLOR_RMPC = "tab:orange"
 COLOR_LQR = "tab:green"
@@ -155,7 +156,7 @@ solving_time_icnn = []
 time_vec_icnn = [0.0]
 
 model = ICNN_CLQR()
-model.load_state_dict(torch.load("clqr_icnn_best_model.pth", map_location="cpu"))
+model.load_state_dict(torch.load(BASE_DIR / "clqr_icnn_best_model.pth", map_location="cpu"))
 model.eval()
 
 for k in range(1, Nsim+1):
@@ -234,7 +235,7 @@ plt.grid(True, which='both')
 plt.legend()
 plt.title('Computation time per step')
 plt.tight_layout()
-plt.savefig(figure_dir / "time_icnn.png", dpi=300, bbox_inches="tight")
+plt.savefig(figure_dir / "icnn_computational_time.png", dpi=300, bbox_inches="tight")
 plt.close()
 
 # ==========================================================

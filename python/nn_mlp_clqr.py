@@ -4,9 +4,12 @@ import scipy.linalg as la
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 from motor import motor_step
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # ==========================================================
 # IMPORT DATASET
@@ -14,7 +17,7 @@ from motor import motor_step
 n = 2
 m = 1
 
-df = pd.read_csv("simulation_data.csv")
+df = pd.read_csv(BASE_DIR / "simulation_data.csv")
 print(df.head())
 
 init_columns = [c for c in df.columns if "_init" in c]

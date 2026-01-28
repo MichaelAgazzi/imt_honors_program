@@ -60,10 +60,11 @@ FORCE_RETRAIN_ICNN = False
 STATE_LOW = np.array([-1.2, -1.0])
 STATE_HIGH = np.array([1.2, 1.0])
 
-OUT_DIR = Path("figure")
+BASE_DIR = Path(__file__).resolve().parent
+OUT_DIR = BASE_DIR / "figure"
 OUT_DIR.mkdir(exist_ok=True)
-DATASET_PATH = Path(f"mpc_tail_cost_dataset_N{N}.csv")
-MODEL_PATH = Path(f"mpc_tail_cost_icnn_N{N}.pth")
+DATASET_PATH = BASE_DIR / f"mpc_tail_cost_dataset_N{N}.csv"
+MODEL_PATH = BASE_DIR / f"mpc_tail_cost_icnn_N{N}.pth"
 
 np.random.seed(RANDOM_SEED)
 torch.manual_seed(RANDOM_SEED)
@@ -473,21 +474,21 @@ def plot_comparison(nominal, icnn):
 
     plt.figure(figsize=(9, 8))
     plt.subplot(3, 1, 1)
-    plt.plot(t, nominal["x"][:, 0], label="MPC N=20")
+    plt.plot(t, nominal["x"][:, 0], label=f"MPC N={N}")
     plt.plot(t, icnn["x"][:, 0], "--", label="one-step ICNN")
     plt.ylabel("x1")
     plt.grid(True)
     plt.legend()
 
     plt.subplot(3, 1, 2)
-    plt.plot(t, nominal["x"][:, 1], label="MPC N=20")
+    plt.plot(t, nominal["x"][:, 1], label=f"MPC N={N}")
     plt.plot(t, icnn["x"][:, 1], "--", label="one-step ICNN")
     plt.ylabel("x2")
     plt.grid(True)
     plt.legend()
 
     plt.subplot(3, 1, 3)
-    plt.step(tu, nominal["u"], where="post", label="MPC N=20")
+    plt.step(tu, nominal["u"], where="post", label=f"MPC N={N}")
     plt.step(tu, icnn["u"], where="post", linestyle="--", label="one-step ICNN")
     plt.axhline(U_BOUND, color="k", linestyle=":")
     plt.axhline(-U_BOUND, color="k", linestyle=":")
@@ -500,7 +501,7 @@ def plot_comparison(nominal, icnn):
     plt.close()
 
     plt.figure(figsize=(8, 4.5))
-    plt.plot(1000 * nominal["solve_time"], label="MPC N=20")
+    plt.plot(1000 * nominal["solve_time"], label=f"MPC N={N}")
     plt.plot(1000 * icnn["solve_time"], label="one-step ICNN")
     plt.yscale("log")
     plt.xlabel("closed-loop step")
@@ -519,7 +520,7 @@ def plot_single_initial_state_performance(nominal, icnn, x0):
 
     plt.figure(figsize=(10, 8))
     plt.subplot(3, 1, 1)
-    plt.plot(t, nominal["x"][:, 0], label="MPC N=20")
+    plt.plot(t, nominal["x"][:, 0], label=f"MPC N={N}")
     plt.plot(t, icnn["x"][:, 0], "--", label="one-step ICNN")
     plt.ylabel("x1")
     plt.title(f"Single initial state, x0 = [{x0[0, 0]:.2f}, {x0[1, 0]:.2f}]")
@@ -527,14 +528,14 @@ def plot_single_initial_state_performance(nominal, icnn, x0):
     plt.legend()
 
     plt.subplot(3, 1, 2)
-    plt.plot(t, nominal["x"][:, 1], label="MPC N=20")
+    plt.plot(t, nominal["x"][:, 1], label=f"MPC N={N}")
     plt.plot(t, icnn["x"][:, 1], "--", label="one-step ICNN")
     plt.ylabel("x2")
     plt.grid(True)
     plt.legend()
 
     plt.subplot(3, 1, 3)
-    plt.step(tu, nominal["u"], where="post", label="MPC N=20")
+    plt.step(tu, nominal["u"], where="post", label=f"MPC N={N}")
     plt.step(tu, icnn["u"], where="post", linestyle="--", label="one-step ICNN")
     plt.axhline(U_BOUND, color="k", linestyle=":")
     plt.axhline(-U_BOUND, color="k", linestyle=":")
@@ -559,7 +560,7 @@ def plot_single_initial_state_cost(nominal, icnn):
 
     plt.figure(figsize=(9, 6))
     plt.subplot(2, 1, 1)
-    plt.plot(tu, nominal_stage_cost, label="MPC N=20")
+    plt.plot(tu, nominal_stage_cost, label=f"MPC N={N}")
     plt.plot(tu, icnn_stage_cost, "--", label="one-step ICNN")
     plt.yscale("log")
     plt.ylabel("stage cost")
@@ -568,7 +569,7 @@ def plot_single_initial_state_cost(nominal, icnn):
     plt.legend()
 
     plt.subplot(2, 1, 2)
-    plt.plot(tu, np.cumsum(nominal_stage_cost), label="MPC N=20")
+    plt.plot(tu, np.cumsum(nominal_stage_cost), label=f"MPC N={N}")
     plt.plot(tu, np.cumsum(icnn_stage_cost), "--", label="one-step ICNN")
     plt.xlabel("time [s]")
     plt.ylabel("cumulative cost")
@@ -798,7 +799,7 @@ def plot_multi_initial_state_metrics(results):
 
     plt.figure(figsize=(11, 9))
     plt.subplot(3, 1, 1)
-    plt.bar(x_axis - width / 2, nominal_final, width, label="MPC N=20")
+    plt.bar(x_axis - width / 2, nominal_final, width, label=f"MPC N={N}")
     plt.bar(x_axis + width / 2, icnn_final, width, label="one-step ICNN")
     plt.yscale("log")
     plt.ylabel("final ||x||")
@@ -807,14 +808,14 @@ def plot_multi_initial_state_metrics(results):
     plt.legend()
 
     plt.subplot(3, 1, 2)
-    plt.bar(x_axis - width / 2, nominal_cost, width, label="MPC N=20")
+    plt.bar(x_axis - width / 2, nominal_cost, width, label=f"MPC N={N}")
     plt.bar(x_axis + width / 2, icnn_cost, width, label="one-step ICNN")
     plt.ylabel("closed-loop cost")
     plt.grid(True, axis="y")
     plt.legend()
 
     plt.subplot(3, 1, 3)
-    plt.bar(x_axis - width / 2, nominal_time, width, label="MPC N=20")
+    plt.bar(x_axis - width / 2, nominal_time, width, label=f"MPC N={N}")
     plt.bar(x_axis + width / 2, icnn_time, width, label="one-step ICNN")
     plt.xticks(x_axis, labels)
     plt.xlabel("initial state")

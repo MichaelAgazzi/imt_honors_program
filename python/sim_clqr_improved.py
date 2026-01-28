@@ -2,10 +2,13 @@ import numpy as np
 import scipy.linalg as la
 import matplotlib.pyplot as plt
 import time
+from pathlib import Path
 import pandas as pd
 
 
 from clqr_improved import lmi_clqr  
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # ==========================================================
 # SYSTEM SETUP: ANTENNA MOTOR CONTROL, LTV system
@@ -215,6 +218,6 @@ for idx in range(n_x0):
     
 print(">>> Saving CSV...")
 df = pd.DataFrame(data_dict)
-df.to_csv('simulation_data_dif_u_bound.csv', index=False)
+df.to_csv(BASE_DIR / 'simulation_data_dif_u_bound.csv', index=False)
 print(">>> CSV saved!")
 # ==========================================================

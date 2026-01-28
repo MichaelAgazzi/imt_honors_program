@@ -6,12 +6,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import time
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import random_split, DataLoader
 from motor import motor_step
 from clqr import lmi_clqr  
 
+BASE_DIR = Path(__file__).resolve().parent
 
 # ==========================================================
 # IMPORT DATASET
@@ -19,7 +21,7 @@ from clqr import lmi_clqr
 n = 2
 m = 1
 
-df = pd.read_csv("simulation_data_bigger_var_ep01.csv")
+df = pd.read_csv(BASE_DIR / "simulation_data_bigger_var_ep01.csv")
 print(df.head())
 
 init_columns = [c for c in df.columns if "_init" in c]
@@ -104,6 +106,8 @@ loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=Tru
 print(f"Total samples: {N}, Batches: {len(loader)}")
 # ==========================================================
 
+
+
 class ICNN_CLQR(nn.Module):
     """
     ICNN per CLQR: garantisce convessità rispetto agli stati
@@ -127,7 +131,7 @@ class ICNN_CLQR(nn.Module):
             else:
                 self.Wz.append(nn.Linear(hidden_sizes[i-1], h, bias=False))
             self.Wx.append(nn.Linear(n_in, h, bias=True))
-            # non negative initialization
+            # non negative initialozation
             nn.init.uniform_(self.Wx[-1].weight, a=0.0, b=0.1)
 
         # Output layer
@@ -146,183 +150,28 @@ class ICNN_CLQR(nn.Module):
         return y
 
 
-# ==========================================================
-# MODEL SELECTION SETUP
-# ==========================================================
 
-hidden_size_grid = [
-    [64, 32],
-    [128, 64, 32],
-    [256, 128, 64],
-    [256, 128, 64, 32]
-]
+    
+# import model if exists
+if model_path := BASE_DIR / "clqr_icnn_model.pth":
+    try:
+        model = ICNN_CLQR()
+        model.load_state_dict(torch.load(model_path))
+        print("Model loaded from", model_path)
+    except Exception as e:
+        print("Error loading model:", e)
+        print("Creating a new model.")
+        model = ICNN_CLQR()
 
-n_epochs = 400
-lr = 1e-3
-
-best_val_loss = np.inf
-best_model_state = None
-best_arch = None
-
-# store results for plots
-arch_list = []
-val_loss_list = []
-train_loss_list = []
-
-# ==========================================================
-def train_and_validate(model, train_loader, val_loader, optimizer, loss_fn, n_epochs):
-
-    train_loss_hist = []
-    val_loss_hist = []
-
-    for epoch in range(n_epochs):
-
-        model.train()
-        train_loss = 0.0
-
-        for batch_x, batch_y in train_loader:
-            optimizer.zero_grad()
-            pred = model(batch_x)
-            loss = loss_fn(pred, batch_y)
-            loss.backward()
-            optimizer.step()
-
-            # ICNN constraint: Wz >= 0
-            with torch.no_grad():
-                for layer in model.Wz:
-                    layer.weight.clamp_(min=0.0)
-
-            train_loss += loss.item() * batch_x.size(0)
-
-        train_loss /= train_size
-        train_loss_hist.append(train_loss)
-
-        # ===== VALIDATION =====
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for batch_x, batch_y in val_loader:
-                pred = model(batch_x)
-                loss = loss_fn(pred, batch_y)
-                val_loss += loss.item() * batch_x.size(0)
-
-        val_loss /= val_size
-        val_loss_hist.append(val_loss)
-
-    return train_loss_hist, val_loss_hist, val_loss
-# ==========================================================
-
-
-# ==========================================================
-# MODEL SELECTION LOOP
-# ==========================================================
-
-for hidden_sizes in hidden_size_grid:
-
-    print(f"\nTraining ICNN with hidden sizes: {hidden_sizes}")
-
-    model = ICNN_CLQR(
-        n_in=3,
-        n_out=3,
-        hidden_sizes=hidden_sizes
-    )
-
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    loss_fn = nn.MSELoss()
-
-    train_hist, val_hist, final_val_loss = train_and_validate(
-        model,
-        train_loader,
-        val_loader,
-        optimizer,
-        loss_fn,
-        n_epochs
-    )
-
-    print(f"Final validation loss: {final_val_loss:.6e}")
-
-    arch_list.append(hidden_sizes)
-    val_loss_list.append(final_val_loss)
-    train_loss_list.append(train_hist[-1])
-
-    if final_val_loss < best_val_loss:
-        best_val_loss = final_val_loss
-        best_model_state = model.state_dict()
-        best_arch = hidden_sizes
-
-
-print("\n===================================")
-print("BEST MODEL FOUND")
-print(f"Hidden sizes: {best_arch}")
-print(f"Validation loss: {best_val_loss:.6e}")
-print("===================================")
-
-# ricrea il best model
-best_model = ICNN_CLQR(
-    n_in=3,
-    n_out=3,
-    hidden_sizes=best_arch
-)
-best_model.load_state_dict(best_model_state)
-
-torch.save(best_model.state_dict(), "clqr_icnn_best_model.pth")
-model = best_model
-
-plt.figure(figsize=(7,4))
-plt.plot(val_loss_list, marker='o')
-plt.yscale('log')
-plt.xlabel('Model index')
-plt.ylabel('Validation MSE')
-plt.title('Validation MSE for Different ICNN Architectures')
-plt.grid(True)
-plt.show()
-
-n_layers_list = [len(arch) for arch in arch_list]
-
-plt.figure(figsize=(7,4))
-plt.scatter(n_layers_list, val_loss_list, s=80)
-plt.yscale('log')
-plt.xlabel('Number of hidden layers')
-plt.ylabel('Validation MSE')
-plt.title('Validation MSE vs Network Depth')
-plt.grid(True)
-plt.show()
-
-n_neurons_list = [sum(arch) for arch in arch_list]
-
-plt.figure(figsize=(7,4))
-plt.scatter(n_neurons_list, val_loss_list, s=80)
-plt.yscale('log')
-plt.xlabel('Total number of hidden neurons')
-plt.ylabel('Validation MSE')
-plt.title('Validation MSE vs Model Capacity')
-plt.grid(True)
-plt.show()
-
-plt.figure(figsize=(8,4))
-plt.plot(val_loss_list, marker='o')
-plt.yscale('log')
-plt.xlabel('Model index')
-plt.ylabel('Validation MSE')
-plt.title('Validation MSE Across ICNN Architectures')
-plt.grid(True)
-
-for i, arch in enumerate(arch_list):
-    plt.text(i, val_loss_list[i], str(arch), fontsize=9, rotation=45)
-
-plt.tight_layout()
-plt.show()
-
-# ==========================================================
-
-optimizer = optim.Adam(model.parameters(), lr=5e-4)
+model = ICNN_CLQR()
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = nn.MSELoss()
 
 # ==========================================================
 # TRAINING AND VALIDATION
 # ==========================================================
 
-n_epochs = 700
+n_epochs = 500
 train_loss_hist = []
 val_loss_hist = []
 
@@ -362,7 +211,7 @@ for epoch in range(n_epochs):
         print(f"Epoch {epoch:4d} | Train Loss: {train_loss:.6e} | Val Loss: {val_loss:.6e}")
         
 # save model 
-torch.save(model.state_dict(), "clqr_icnn_model.pth")
+torch.save(model.state_dict(), BASE_DIR / "clqr_icnn_model.pth")
 # ==========================================================
 plt.figure()
 plt.plot(train_loss_hist, label='Train')
@@ -440,8 +289,8 @@ plt.show()
 # ==========================================================
 # SIMULATE SYSTEM USING TRAINED NN CONTROLLER VS CLOQR
 # ==========================================================
-x0 = np.array([[-0.4], [-1.0]]) 
-u_bound = 1.2
+x0 = np.array([[0.4], [0.4]]) 
+u_bound = 2.0
 Nsim_test = 100
 vertex_id = 1  
 
@@ -558,13 +407,16 @@ plt.figure()
 # compute mean computation time per step
 mean_time_ICNN = np.mean(comp_time_vec)
 mean_time_clqr = np.mean(comp_time_vec_clqr)
+# log scale plot of computation time per step for both methods, with mean time as horizontal line
 plt.axhline(mean_time_ICNN, color='blue', linestyle='--', label=f'ICNN Mean Time: {mean_time_ICNN:.4f}s')
 plt.axhline(mean_time_clqr, color='orange', linestyle='--', label=f'CLQR Mean Time: {mean_time_clqr:.4f}s')
-plt.plot(np.arange(len(comp_time_vec)), comp_time_vec, marker='o')
-plt.plot(np.arange(len(comp_time_vec_clqr)), comp_time_vec_clqr, marker='x')
+plt.scatter(np.arange(len(comp_time_vec)), comp_time_vec, marker='o', label='ICNN')
+plt.scatter(np.arange(len(comp_time_vec_clqr)), comp_time_vec_clqr, marker='x', label='CLQR')
 plt.legend()
 plt.title('Computation Time per Step')
 plt.xlabel('Step')
 plt.ylabel('Time [s]')
+plt.yscale('log')
+plt.ylim(min(min(comp_time_vec), min(comp_time_vec_clqr))*0.1, max(max(comp_time_vec), max(comp_time_vec_clqr))*10)
 plt.grid()
 plt.show()

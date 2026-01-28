@@ -3,8 +3,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pathlib import Path
 import matplotlib.pyplot as plt
 from motor import motor_step
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 class ICNN_CLQR(nn.Module):
@@ -51,7 +54,7 @@ class ICNN_CLQR(nn.Module):
 # ===============================
 # LOAD TRAINED MODEL
 # ===============================
-model_path = "clqr_icnn_best_model.pth"
+model_path = BASE_DIR / "clqr_icnn_best_model.pth"
 model = ICNN_CLQR(n_in=3, n_out=4, hidden_sizes=[256, 128, 64]) 
 model.load_state_dict(torch.load(model_path))
 model.eval()
