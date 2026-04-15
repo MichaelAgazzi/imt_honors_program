@@ -1,0 +1,75 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# MATLAB temporary and generated files
+*.asv
+*.m~
+*.slxc
+*.mex*
+*.mlappinstall
+*.mat
+codegen/
+slprj/
+
+# Python cache, environments, and packaging
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# LaTeX auxiliary and build files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+_minted*/
+
+# Generated experiment artifacts
+artifacts/
+checkpoints/
+outputs/
+runs/
+wandb/
+generated_figures/
+fig/generated/
+python/generated/
+python/**/generated/
+python/**/figures_generated/
+*.pt
+*.onnx
+*.npz
+*.npy
+
+# Large video/archive outputs
+*.avi
+*.mp4
+*.mov
+*.zip
+*.7z
+*.tar
+*.tar.gz
