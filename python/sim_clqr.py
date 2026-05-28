@@ -237,7 +237,7 @@ for idx in range(n_x0):
     
 # print(">>> Saving CSV...")
 # df = pd.DataFrame(data_dict)
-# df.to_csv('simulation_data_gamma.csv', index=False)
+# df.to_csv(BASE_DIR / "dataset" / "simulation_data_gamma.csv", index=False)
 # print(">>> CSV saved!")
 # ==========================================================
 # plot 3D trajectory of worst delta

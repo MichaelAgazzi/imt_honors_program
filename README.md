@@ -128,8 +128,10 @@ optimization effort.
 - `fig/`: selected MATLAB-generated figures for the constrained LQR/RMPC examples, including closed-loop responses and pole trajectories.
 - `matlab/`: MATLAB/YALMIP implementations of LMI-based constrained control examples.
 - `python/`: Python experiments for robust CLQR simulations, ICNN/MLP approximation, one-step MPC with learned tail cost, and Lyapunov-style ICNN controllers.
+- `python/dataset/`: CSV datasets and tabular experiment summaries used by the Python scripts.
 - `python/icnn_lyapunov/`: more structured PyTorch code for learning value/Lyapunov approximations and testing closed-loop behavior.
 - `python/figure/`: plots used to document Python experiments, including CLQR/ICNN comparisons, model-selection diagnostics, computational-time summaries, and one-step MPC results.
+- `python/nn_model/`: trained PyTorch checkpoints used by the neural approximation experiments.
 - `Robust_Constrained_MPC_using_LMI.pdf`: included reference paper for the LMI robust MPC formulation.
 
 ## MATLAB Usage
@@ -168,7 +170,9 @@ python .\python\mpc_icnn_onestep.py
 python .\python\icnn_lyapunov\simulate_closed_loop.py --checkpoint icnn_lyapunov\gamma_icnn.pth --nsim 30 --u-max 2.0
 ```
 
-The scripts use paths relative to their own source folder, so datasets, checkpoints, and generated figures remain under `python/`.
+The scripts use paths relative to their own source folder, so datasets,
+checkpoints, and generated figures remain under `python/dataset/`,
+`python/nn_model/`, and `python/figure/`, respectively.
 
 ## Reproducing Examples
 

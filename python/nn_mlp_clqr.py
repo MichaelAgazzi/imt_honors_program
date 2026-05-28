@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from motor import motor_step
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "dataset"
 
 # ==========================================================
 # IMPORT DATASET
@@ -17,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent
 n = 2
 m = 1
 
-df = pd.read_csv(BASE_DIR / "simulation_data.csv")
+df = pd.read_csv(DATA_DIR / "simulation_data.csv")
 print(df.head())
 
 init_columns = [c for c in df.columns if "_init" in c]

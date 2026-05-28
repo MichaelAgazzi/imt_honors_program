@@ -14,6 +14,9 @@ from motor import motor_step
 from clqr import lmi_clqr  
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "dataset"
+MODEL_DIR = BASE_DIR / "nn_model"
+MODEL_DIR.mkdir(exist_ok=True)
 
 # ==========================================================
 # IMPORT DATASET
@@ -21,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent
 n = 2
 m = 1
 
-df = pd.read_csv(BASE_DIR / "simulation_data_bigger_var_ep01.csv")
+df = pd.read_csv(DATA_DIR / "simulation_data_bigger_var_ep01.csv")
 print(df.head())
 
 init_columns = [c for c in df.columns if "_init" in c]
@@ -267,7 +270,7 @@ best_model = ICNN_CLQR(
 )
 best_model.load_state_dict(best_model_state)
 
-torch.save(best_model.state_dict(), BASE_DIR / "clqr_icnn_best_model.pth")
+torch.save(best_model.state_dict(), MODEL_DIR / "clqr_icnn_best_model.pth")
 model = best_model
 
 plt.figure(figsize=(7,4))
@@ -364,7 +367,7 @@ for epoch in range(n_epochs):
         print(f"Epoch {epoch:4d} | Train Loss: {train_loss:.6e} | Val Loss: {val_loss:.6e}")
         
 # save model 
-torch.save(model.state_dict(), BASE_DIR / "clqr_icnn_model.pth")
+torch.save(model.state_dict(), MODEL_DIR / "clqr_icnn_model.pth")
 # ==========================================================
 plt.figure()
 plt.plot(train_loss_hist, label='Train')

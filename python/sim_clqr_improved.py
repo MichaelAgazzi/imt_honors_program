@@ -9,6 +9,8 @@ import pandas as pd
 from clqr_improved import lmi_clqr  
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "dataset"
+DATA_DIR.mkdir(exist_ok=True)
 
 # ==========================================================
 # SYSTEM SETUP: ANTENNA MOTOR CONTROL, LTV system
@@ -218,6 +220,6 @@ for idx in range(n_x0):
     
 print(">>> Saving CSV...")
 df = pd.DataFrame(data_dict)
-df.to_csv(BASE_DIR / 'simulation_data_dif_u_bound.csv', index=False)
+df.to_csv(DATA_DIR / 'simulation_data_dif_u_bound.csv', index=False)
 print(">>> CSV saved!")
 # ==========================================================

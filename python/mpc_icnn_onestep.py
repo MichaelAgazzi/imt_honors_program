@@ -62,9 +62,13 @@ STATE_HIGH = np.array([1.2, 1.0])
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_DIR = BASE_DIR / "figure"
+DATA_DIR = BASE_DIR / "dataset"
+MODEL_DIR = BASE_DIR / "nn_model"
 OUT_DIR.mkdir(exist_ok=True)
-DATASET_PATH = BASE_DIR / f"mpc_tail_cost_dataset_N{N}.csv"
-MODEL_PATH = BASE_DIR / f"mpc_tail_cost_icnn_N{N}.pth"
+DATA_DIR.mkdir(exist_ok=True)
+MODEL_DIR.mkdir(exist_ok=True)
+DATASET_PATH = DATA_DIR / f"mpc_tail_cost_dataset_N{N}.csv"
+MODEL_PATH = MODEL_DIR / f"mpc_tail_cost_icnn_N{N}.pth"
 
 np.random.seed(RANDOM_SEED)
 torch.manual_seed(RANDOM_SEED)
@@ -840,7 +844,7 @@ def plot_multi_initial_state_metrics(results):
                 "icnn_mean_solve_time_ms": 1000 * item["icnn"]["solve_time"].mean(),
             }
         )
-    pd.DataFrame(rows).to_csv(OUT_DIR / "mpc_multi_initial_state_metrics.csv", index=False)
+    pd.DataFrame(rows).to_csv(DATA_DIR / "mpc_multi_initial_state_metrics.csv", index=False)
 
 
 def print_summary(nominal, icnn):
@@ -861,7 +865,7 @@ def print_summary(nominal, icnn):
         },
     ]
     df = pd.DataFrame(rows)
-    df.to_csv(OUT_DIR / "mpc_nominal_vs_icnn_summary.csv", index=False)
+    df.to_csv(DATA_DIR / "mpc_nominal_vs_icnn_summary.csv", index=False)
     print("\n=== Closed-loop summary ===")
     print(df.to_string(index=False))
 

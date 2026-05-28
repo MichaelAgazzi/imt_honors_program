@@ -40,6 +40,7 @@ u_bound = 2.0
 y_bound = 1000.5
 epsilon = 1e-5
 BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "nn_model"
 figure_dir = BASE_DIR / "figure"
 figure_dir.mkdir(exist_ok=True)
 COLOR_RMPC = "tab:orange"
@@ -156,7 +157,7 @@ solving_time_icnn = []
 time_vec_icnn = [0.0]
 
 model = ICNN_CLQR()
-model.load_state_dict(torch.load(BASE_DIR / "clqr_icnn_best_model.pth", map_location="cpu"))
+model.load_state_dict(torch.load(MODEL_DIR / "clqr_icnn_best_model.pth", map_location="cpu"))
 model.eval()
 
 for k in range(1, Nsim+1):
